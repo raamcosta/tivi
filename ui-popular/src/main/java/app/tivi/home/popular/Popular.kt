@@ -22,29 +22,34 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import app.tivi.common.compose.EntryGrid
 import app.tivi.common.compose.rememberFlowWithLifecycle
+import com.ramcosta.composedestinations.annotation.Destination
 
+interface PopularShowsNavigator {
+    fun navigateUp()
+
+    fun openShowDetails(showId: Long)
+}
+
+@Destination
 @Composable
 fun PopularShows(
-    openShowDetails: (showId: Long) -> Unit,
-    navigateUp: () -> Unit,
+    navigator: PopularShowsNavigator
 ) {
     PopularShows(
         viewModel = hiltViewModel(),
-        openShowDetails = openShowDetails,
-        navigateUp = navigateUp,
+        navigator = navigator
     )
 }
 
 @Composable
 internal fun PopularShows(
     viewModel: PopularShowsViewModel,
-    openShowDetails: (showId: Long) -> Unit,
-    navigateUp: () -> Unit,
+    navigator: PopularShowsNavigator
 ) {
     EntryGrid(
         lazyPagingItems = rememberFlowWithLifecycle(viewModel.pagedList).collectAsLazyPagingItems(),
         title = stringResource(R.string.discover_popular_title),
-        onOpenShowDetails = openShowDetails,
-        onNavigateUp = navigateUp,
+        onOpenShowDetails = navigator::openShowDetails,
+        onNavigateUp = navigator::navigateUp,
     )
 }

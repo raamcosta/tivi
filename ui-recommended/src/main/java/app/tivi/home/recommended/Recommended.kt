@@ -23,30 +23,35 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import app.tivi.common.compose.EntryGrid
+import com.ramcosta.composedestinations.annotation.Destination
 
+interface RecommendedShowsNavigator {
+    fun navigateUp()
+
+    fun openShowDetails(showId: Long)
+}
+
+@Destination
 @Composable
 fun RecommendedShows(
-    openShowDetails: (showId: Long) -> Unit,
-    navigateUp: () -> Unit,
+    navigator: RecommendedShowsNavigator
 ) {
     RecommendedShows(
         viewModel = hiltViewModel(),
-        openShowDetails = openShowDetails,
-        navigateUp = navigateUp,
+        navigator = navigator
     )
 }
 
 @Composable
 internal fun RecommendedShows(
     viewModel: RecommendedShowsViewModel,
-    openShowDetails: (showId: Long) -> Unit,
-    navigateUp: () -> Unit,
+    navigator: RecommendedShowsNavigator
 ) {
     EntryGrid(
         lazyPagingItems = viewModel.pagedList.collectAsLazyPagingItems(),
         title = stringResource(R.string.discover_recommended_title),
-        onOpenShowDetails = openShowDetails,
-        onNavigateUp = navigateUp,
+        onOpenShowDetails = navigator::openShowDetails,
+        onNavigateUp = navigator::navigateUp,
         modifier = Modifier.fillMaxSize()
     )
 }

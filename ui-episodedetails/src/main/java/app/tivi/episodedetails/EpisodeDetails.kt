@@ -101,17 +101,29 @@ import app.tivi.ui.animations.lerp
 import coil.compose.rememberImagePainter
 import com.google.accompanist.insets.statusBarsPadding
 import com.google.accompanist.insets.ui.Scaffold
+import com.ramcosta.composedestinations.annotation.Destination
 import org.threeten.bp.OffsetDateTime
 import kotlin.math.absoluteValue
 import kotlin.math.hypot
 
+interface EpisodeDetailsNavigator {
+    fun navigateUp()
+}
+
+data class EpisodeDetailsNavArgs(
+    val episodeId: Long
+)
+
+@Destination(
+    navArgsDelegate = EpisodeDetailsNavArgs::class
+)
 @Composable
 fun EpisodeDetails(
-    navigateUp: () -> Unit,
+    navigator: EpisodeDetailsNavigator,
 ) {
     EpisodeDetails(
         viewModel = hiltViewModel(),
-        navigateUp = navigateUp,
+        navigateUp = navigator::navigateUp,
     )
 }
 

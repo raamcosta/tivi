@@ -24,30 +24,35 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import app.tivi.common.compose.EntryGrid
 import app.tivi.common.compose.rememberFlowWithLifecycle
+import com.ramcosta.composedestinations.annotation.Destination
 
+interface TrendingShowsNavigator {
+    fun navigateUp()
+
+    fun openShowDetails(showId: Long)
+}
+
+@Destination
 @Composable
 fun TrendingShows(
-    openShowDetails: (showId: Long) -> Unit,
-    navigateUp: () -> Unit,
+    navigator: TrendingShowsNavigator
 ) {
     TrendingShows(
         viewModel = hiltViewModel(),
-        openShowDetails = openShowDetails,
-        navigateUp = navigateUp,
+        navigator = navigator
     )
 }
 
 @Composable
 internal fun TrendingShows(
     viewModel: TrendingShowsViewModel,
-    openShowDetails: (showId: Long) -> Unit,
-    navigateUp: () -> Unit,
+    navigator: TrendingShowsNavigator
 ) {
     EntryGrid(
         lazyPagingItems = rememberFlowWithLifecycle(viewModel.pagedList).collectAsLazyPagingItems(),
         title = stringResource(R.string.discover_trending_title),
-        onOpenShowDetails = openShowDetails,
-        onNavigateUp = navigateUp,
+        onOpenShowDetails = navigator::openShowDetails,
+        onNavigateUp = navigator::navigateUp,
         modifier = Modifier.fillMaxSize()
     )
 }

@@ -62,28 +62,34 @@ import app.tivi.data.entities.TiviShow
 import app.tivi.data.resultentities.ShowDetailed
 import com.google.accompanist.insets.statusBarsPadding
 import com.google.accompanist.insets.ui.Scaffold
+import com.ramcosta.composedestinations.annotation.Destination
 
+interface SearchNavigator {
+    fun openShowDetails(showId: Long)
+}
+
+@Destination
 @Composable
 fun Search(
-    openShowDetails: (showId: Long) -> Unit,
+    navigator: SearchNavigator
 ) {
     Search(
         viewModel = hiltViewModel(),
-        openShowDetails = openShowDetails,
+        navigator = navigator,
     )
 }
 
 @Composable
 internal fun Search(
     viewModel: SearchViewModel,
-    openShowDetails: (showId: Long) -> Unit,
+    navigator: SearchNavigator
 ) {
     val viewState by rememberFlowWithLifecycle(viewModel.state)
         .collectAsState(initial = SearchViewState.Empty)
 
     Search(
         state = viewState,
-        openShowDetails = openShowDetails,
+        navigator = navigator,
         onSearchQueryChanged = { viewModel.search(it) },
         onMessageShown = { viewModel.clearMessage(it) },
     )
@@ -93,7 +99,7 @@ internal fun Search(
 @Composable
 internal fun Search(
     state: SearchViewState,
-    openShowDetails: (showId: Long) -> Unit,
+    navigator: SearchNavigator,
     onSearchQueryChanged: (query: String) -> Unit,
     onMessageShown: (id: Long) -> Unit,
 ) {
@@ -145,7 +151,7 @@ internal fun Search(
         SearchList(
             results = state.searchResults,
             contentPadding = padding,
-            onShowClicked = { openShowDetails(it.id) },
+            onShowClicked = { navigator.openShowDetails(it.id) },
             modifier = Modifier.bodyWidth()
         )
     }

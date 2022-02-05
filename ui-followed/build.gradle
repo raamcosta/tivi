@@ -15,17 +15,18 @@
  *
  */
 
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.google.devtools.ksp' version '1.6.10-1.0.2'
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'dagger.hilt.android.plugin'
+}
 
-apply plugin: 'kotlin-android'
-
-apply plugin: 'kotlin-kapt'
 kapt {
     correctErrorTypes = true
     useBuildCache = true
 }
-
-apply plugin: 'dagger.hilt.android.plugin'
 
 android {
     compileSdkVersion buildConfig.compileSdk
@@ -45,6 +46,21 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion libs.versions.composecompiler.get()
+    }
+
+    ksp {
+        arg("compose-destinations.generateNavGraphs", "false")
+    }
+}
+
+kotlin {
+    sourceSets {
+        debug {
+            kotlin.srcDir("build/generated/ksp/debug/kotlin")
+        }
+        release {
+            kotlin.srcDir("build/generated/ksp/release/kotlin")
+        }
     }
 }
 
@@ -76,4 +92,7 @@ dependencies {
     implementation libs.androidx.hilt.compose
     implementation libs.hilt.library
     kapt libs.hilt.compiler
+
+    implementation libs.compose.destinations.core
+    ksp libs.compose.destinations.ksp
 }

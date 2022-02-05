@@ -25,75 +25,126 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import app.tivi.account.AccountUi
-import app.tivi.episodedetails.EpisodeDetails
-import app.tivi.home.discover.Discover
-import app.tivi.home.followed.Followed
-import app.tivi.home.popular.PopularShows
-import app.tivi.home.recommended.RecommendedShows
-import app.tivi.home.search.Search
-import app.tivi.home.trending.TrendingShows
-import app.tivi.home.watched.Watched
-import app.tivi.showdetails.details.ShowDetails
-import app.tivi.showdetails.seasons.ShowSeasons
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.navigation
+import app.tivi.account.destinations.AccountUiDestination
+import app.tivi.episodedetails.destinations.EpisodeDetailsDestination
+import app.tivi.home.discover.destinations.DiscoverDestination
+import app.tivi.home.followed.destinations.FollowedDestination
+import app.tivi.home.navGraph
+import app.tivi.home.popular.destinations.PopularShowsDestination
+import app.tivi.home.recommended.destinations.RecommendedShowsDestination
+import app.tivi.home.search.destinations.SearchDestination
+import app.tivi.home.trending.destinations.TrendingShowsDestination
+import app.tivi.home.watched.destinations.WatchedDestination
+import app.tivi.showdetails.details.destinations.ShowDetailsDestination
+import app.tivi.showdetails.seasons.destinations.ShowSeasonsDestination
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
+import com.ramcosta.composedestinations.dynamic.routedIn
+import com.ramcosta.composedestinations.manualcomposablecalls.DestinationScope
+import com.ramcosta.composedestinations.navigation.dependency
+import com.ramcosta.composedestinations.spec.DestinationSpec
+import com.ramcosta.composedestinations.spec.NavGraphSpec
 
-internal sealed class Screen(val route: String) {
-    object Discover : Screen("discover")
-    object Following : Screen("following")
-    object Watched : Screen("watched")
-    object Search : Screen("search")
+object NavGraphs {
+
+    val search = object: NavGraphSpec {
+        override val route = "search"
+
+        override val startRoute = SearchDestination routedIn this
+
+        override val destinationsByRoute = listOf<DestinationSpec<*>>(
+            SearchDestination,
+            AccountUiDestination,
+            ShowDetailsDestination,
+            ShowSeasonsDestination,
+            EpisodeDetailsDestination,
+        ).routedIn(this)
+            .associateBy { it.route }
+    }
+
+    val watched = object: NavGraphSpec {
+        override val route = "watched"
+
+        override val startRoute = WatchedDestination routedIn this
+
+        override val destinationsByRoute = listOf<DestinationSpec<*>>(
+            WatchedDestination,
+            AccountUiDestination,
+            ShowDetailsDestination,
+            ShowSeasonsDestination,
+            EpisodeDetailsDestination,
+        ).routedIn(this)
+            .associateBy { it.route }
+    }
+
+    val following = object: NavGraphSpec {
+        override val route = "following"
+
+        override val startRoute = FollowedDestination routedIn this
+
+        override val destinationsByRoute = listOf<DestinationSpec<*>>(
+            FollowedDestination,
+            AccountUiDestination,
+            ShowDetailsDestination,
+            ShowSeasonsDestination,
+            EpisodeDetailsDestination,
+        ).routedIn(this)
+            .associateBy { it.route }
+    }
+
+    val discover = object: NavGraphSpec {
+        override val route = "discover"
+
+        override val startRoute = DiscoverDestination routedIn this
+
+        override val destinationsByRoute = listOf<DestinationSpec<*>>(
+            DiscoverDestination,
+            AccountUiDestination,
+            ShowDetailsDestination,
+            ShowSeasonsDestination,
+            EpisodeDetailsDestination,
+            RecommendedShowsDestination,
+            TrendingShowsDestination,
+            PopularShowsDestination,
+        ).routedIn(this)
+            .associateBy { it.route }
+    }
+
+    val root = object: NavGraphSpec {
+        override val route = "root"
+        override val startRoute = discover
+        override val destinationsByRoute = emptyMap<String, DestinationSpec<*>>()
+        override val nestedNavGraphs = listOf(
+            discover,
+            following,
+            watched,
+            search
+        )
+    }
 }
 
-private sealed class LeafScreen(
-    private val route: String,
-) {
-    fun createRoute(root: Screen) = "${root.route}/$route"
-
-    object Discover : LeafScreen("discover")
-    object Following : LeafScreen("following")
-    object Trending : LeafScreen("trending")
-    object Popular : LeafScreen("popular")
-
-    object ShowDetails : LeafScreen("show/{showId}") {
-        fun createRoute(root: Screen, showId: Long): String {
-            return "${root.route}/show/$showId"
-        }
-    }
-
-    object EpisodeDetails : LeafScreen("episode/{episodeId}") {
-        fun createRoute(root: Screen, episodeId: Long): String {
-            return "${root.route}/episode/$episodeId"
-        }
-    }
-
-    object ShowSeasons : LeafScreen("show/{showId}/seasons?seasonId={seasonId}") {
-        fun createRoute(
-            root: Screen,
-            showId: Long,
-            seasonId: Long? = null,
-        ): String {
-            return "${root.route}/show/$showId/seasons".let {
-                if (seasonId != null) "$it?seasonId=$seasonId" else it
-            }
-        }
-    }
-
-    object RecommendedShows : LeafScreen("recommendedshows")
-    object Watched : LeafScreen("watched")
-    object Search : LeafScreen("search")
-    object Account : LeafScreen("account")
+fun ArrayDeque<NavBackStackEntry>.print(prefix: String = "stack") {
+    val stack = toMutableList()
+        .map { it.destination.route }
+        .toTypedArray().contentToString()
+    println("$prefix = $stack")
 }
 
+fun DestinationScope<*>.currentNavigator(openSettings: () -> Unit): CommonNavGraphNavigator{
+    return CommonNavGraphNavigator(
+        navBackStackEntry.destination.navGraph(),
+        navController,
+        openSettings
+    )
+}
+
+@OptIn(ExperimentalMaterialNavigationApi::class)
 @ExperimentalAnimationApi
 @Composable
 internal fun AppNavigation(
@@ -101,327 +152,22 @@ internal fun AppNavigation(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AnimatedNavHost(
-        navController = navController,
-        startDestination = Screen.Discover.route,
-        enterTransition = { defaultTiviEnterTransition(initialState, targetState) },
-        exitTransition = { defaultTiviExitTransition(initialState, targetState) },
-        popEnterTransition = { defaultTiviPopEnterTransition() },
-        popExitTransition = { defaultTiviPopExitTransition() },
-        modifier = modifier,
-    ) {
-        addDiscoverTopLevel(navController, onOpenSettings)
-        addFollowingTopLevel(navController, onOpenSettings)
-        addWatchedTopLevel(navController, onOpenSettings)
-        addSearchTopLevel(navController, onOpenSettings)
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addDiscoverTopLevel(
-    navController: NavController,
-    openSettings: () -> Unit,
-) {
-    navigation(
-        route = Screen.Discover.route,
-        startDestination = LeafScreen.Discover.createRoute(Screen.Discover),
-    ) {
-        addDiscover(navController, Screen.Discover)
-        addAccount(Screen.Discover, openSettings)
-        addShowDetails(navController, Screen.Discover)
-        addShowSeasons(navController, Screen.Discover)
-        addEpisodeDetails(navController, Screen.Discover)
-        addRecommendedShows(navController, Screen.Discover)
-        addTrendingShows(navController, Screen.Discover)
-        addPopularShows(navController, Screen.Discover)
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addFollowingTopLevel(
-    navController: NavController,
-    openSettings: () -> Unit,
-) {
-    navigation(
-        route = Screen.Following.route,
-        startDestination = LeafScreen.Following.createRoute(Screen.Following),
-    ) {
-        addFollowedShows(navController, Screen.Following)
-        addAccount(Screen.Following, openSettings)
-        addShowDetails(navController, Screen.Following)
-        addShowSeasons(navController, Screen.Following)
-        addEpisodeDetails(navController, Screen.Following)
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addWatchedTopLevel(
-    navController: NavController,
-    openSettings: () -> Unit,
-) {
-    navigation(
-        route = Screen.Watched.route,
-        startDestination = LeafScreen.Watched.createRoute(Screen.Watched),
-    ) {
-        addWatchedShows(navController, Screen.Watched)
-        addAccount(Screen.Watched, openSettings)
-        addShowDetails(navController, Screen.Watched)
-        addShowSeasons(navController, Screen.Watched)
-        addEpisodeDetails(navController, Screen.Watched)
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addSearchTopLevel(
-    navController: NavController,
-    openSettings: () -> Unit,
-) {
-    navigation(
-        route = Screen.Search.route,
-        startDestination = LeafScreen.Search.createRoute(Screen.Search),
-    ) {
-        addSearch(navController, Screen.Search)
-        addAccount(Screen.Search, openSettings)
-        addShowDetails(navController, Screen.Search)
-        addShowSeasons(navController, Screen.Search)
-        addEpisodeDetails(navController, Screen.Search)
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addDiscover(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.Discover.createRoute(root),
-        debugLabel = "Discover()",
-    ) {
-        Discover(
-            openTrendingShows = {
-                navController.navigate(LeafScreen.Trending.createRoute(root))
-            },
-            openPopularShows = {
-                navController.navigate(LeafScreen.Popular.createRoute(root))
-            },
-            openRecommendedShows = {
-                navController.navigate(LeafScreen.RecommendedShows.createRoute(root))
-            },
-            openShowDetails = { showId, seasonId, episodeId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-
-                // If we have an season id, we also open that
-                if (seasonId != null) {
-                    navController.navigate(
-                        LeafScreen.ShowSeasons.createRoute(root, showId, seasonId)
-                    )
-                }
-                // If we have an episodeId, we also open that
-                if (episodeId != null) {
-                    navController.navigate(LeafScreen.EpisodeDetails.createRoute(root, episodeId))
-                }
-            },
-            openUser = {
-                navController.navigate(LeafScreen.Account.createRoute(root))
-            },
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addFollowedShows(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.Following.createRoute(root),
-        debugLabel = "Followed()",
-    ) {
-        Followed(
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-            openUser = {
-                navController.navigate(LeafScreen.Account.createRoute(root))
-            },
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addWatchedShows(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.Watched.createRoute(root),
-        debugLabel = "Watched()",
-    ) {
-        Watched(
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-            openUser = {
-                navController.navigate(LeafScreen.Account.createRoute(root))
-            },
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addSearch(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(LeafScreen.Search.createRoute(root)) {
-        Search(
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addShowDetails(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.ShowDetails.createRoute(root),
-        debugLabel = "ShowDetails()",
-        arguments = listOf(
-            navArgument("showId") { type = NavType.LongType }
+    DestinationsNavHost(
+        engine = rememberAnimatedNavHostEngine(
+            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+                enterTransition = { defaultTiviEnterTransition(initialState, targetState) },
+                exitTransition = { defaultTiviExitTransition(initialState, targetState) },
+                popEnterTransition = { defaultTiviPopEnterTransition() },
+                popExitTransition = { defaultTiviPopExitTransition() },
+            )
         ),
-    ) {
-        ShowDetails(
-            navigateUp = navController::navigateUp,
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-            openEpisodeDetails = { episodeId ->
-                navController.navigate(LeafScreen.EpisodeDetails.createRoute(root, episodeId))
-            },
-            openSeasons = { showId, seasonId ->
-                navController.navigate(LeafScreen.ShowSeasons.createRoute(root, showId, seasonId))
-            }
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addEpisodeDetails(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.EpisodeDetails.createRoute(root),
-        debugLabel = "EpisodeDetails()",
-        arguments = listOf(
-            navArgument("episodeId") { type = NavType.LongType },
-        )
-    ) {
-        EpisodeDetails(
-            navigateUp = navController::navigateUp,
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addRecommendedShows(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.RecommendedShows.createRoute(root),
-        debugLabel = "RecommendedShows()",
-    ) {
-        RecommendedShows(
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-            navigateUp = navController::navigateUp,
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addTrendingShows(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.Trending.createRoute(root),
-        debugLabel = "TrendingShows()",
-    ) {
-        TrendingShows(
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-            navigateUp = navController::navigateUp,
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addPopularShows(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.Popular.createRoute(root),
-        debugLabel = "PopularShows()",
-    ) {
-        PopularShows(
-            openShowDetails = { showId ->
-                navController.navigate(LeafScreen.ShowDetails.createRoute(root, showId))
-            },
-            navigateUp = navController::navigateUp,
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addAccount(
-    root: Screen,
-    onOpenSettings: () -> Unit,
-) {
-    dialog(
-        route = LeafScreen.Account.createRoute(root),
-        debugLabel = "AccountUi()",
-    ) {
-        AccountUi(
-            openSettings = onOpenSettings
-        )
-    }
-}
-
-@ExperimentalAnimationApi
-private fun NavGraphBuilder.addShowSeasons(
-    navController: NavController,
-    root: Screen,
-) {
-    composable(
-        route = LeafScreen.ShowSeasons.createRoute(root),
-        debugLabel = "ShowSeasons()",
-        arguments = listOf(
-            navArgument("showId") {
-                type = NavType.LongType
-            },
-            navArgument("seasonId") {
-                type = NavType.StringType
-                nullable = true
-            }
-        )
-    ) {
-        ShowSeasons(
-            navigateUp = navController::navigateUp,
-            openEpisodeDetails = { episodeId ->
-                navController.navigate(LeafScreen.EpisodeDetails.createRoute(root, episodeId))
-            },
-            initialSeasonId = it.arguments?.getString("seasonId")?.toLong()
-        )
-    }
+        navController = navController,
+        navGraph = NavGraphs.root,
+        modifier = modifier,
+        dependenciesContainerBuilder = {
+            dependency(currentNavigator(onOpenSettings))
+        }
+    )
 }
 
 @ExperimentalAnimationApi

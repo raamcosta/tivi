@@ -28,6 +28,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
 
         // Used for Accompanist snapshots
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
@@ -55,6 +56,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
 
         // Jetpack Compose SNAPSHOTs
         def composeSnapshot = libs.versions.composesnapshot.get()

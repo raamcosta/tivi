@@ -61,16 +61,23 @@ import app.tivi.trakt.TraktAuthState
 import coil.compose.rememberImagePainter
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.spec.DestinationStyle
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.ZoneOffset
 
+interface AccountUiNavigator {
+    fun openSettings()
+}
+
+@Destination(style = DestinationStyle.Dialog::class)
 @Composable
 fun AccountUi(
-    openSettings: () -> Unit,
+    navigator: AccountUiNavigator,
 ) {
     AccountUi(
         viewModel = hiltViewModel(),
-        openSettings = openSettings,
+        openSettings = navigator::openSettings,
     )
 }
 

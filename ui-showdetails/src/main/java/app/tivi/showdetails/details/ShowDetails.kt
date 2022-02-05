@@ -136,45 +136,52 @@ import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
+import com.ramcosta.composedestinations.annotation.Destination
 import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.SnapOffsets
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import org.threeten.bp.OffsetDateTime
 
+interface ShowDetailsNavigator {
+
+    fun navigateUp()
+
+    fun openShowDetails(showId: Long)
+
+    fun openEpisodeDetails(episodeId: Long)
+
+    fun openSeasons(showId: Long, seasonId: Long)
+}
+
+data class ShowDetailsNavArgs(
+    val showId: Long
+)
+
+@Destination(
+    navArgsDelegate = ShowDetailsNavArgs::class
+)
 @Composable
 fun ShowDetails(
-    navigateUp: () -> Unit,
-    openShowDetails: (showId: Long) -> Unit,
-    openEpisodeDetails: (episodeId: Long) -> Unit,
-    openSeasons: (showId: Long, seasonId: Long) -> Unit,
+    showDetailsNavigator: ShowDetailsNavigator,
 ) {
     ShowDetails(
         viewModel = hiltViewModel(),
-        navigateUp = navigateUp,
-        openShowDetails = openShowDetails,
-        openEpisodeDetails = openEpisodeDetails,
-        openSeasons = openSeasons,
+        showDetailsNavigator = showDetailsNavigator
     )
 }
 
 @Composable
 internal fun ShowDetails(
     viewModel: ShowDetailsViewModel,
-    navigateUp: () -> Unit,
-    openShowDetails: (showId: Long) -> Unit,
-    openEpisodeDetails: (episodeId: Long) -> Unit,
-    openSeasons: (showId: Long, seasonId: Long) -> Unit,
+    showDetailsNavigator: ShowDetailsNavigator
 ) {
     val viewState by rememberFlowWithLifecycle(viewModel.state).collectAsState(null)
     viewState?.let { state ->
         ShowDetails(
             viewState = state,
-            navigateUp = navigateUp,
-            openShowDetails = openShowDetails,
-            openEpisodeDetails = openEpisodeDetails,
+            showDetailsNavigator = showDetailsNavigator,
             refresh = { viewModel.refresh() },
             onMessageShown = { viewModel.clearMessage(it) },
-            openSeason = { openSeasons(state.show.id, it) },
             onSeasonFollowed = { viewModel.setSeasonFollowed(it, true) },
             onSeasonUnfollowed = { viewModel.setSeasonFollowed(it, false) },
             unfollowPreviousSeasons = { viewModel.unfollowPreviousSeasons(it) },
@@ -189,12 +196,9 @@ internal fun ShowDetails(
 @Composable
 internal fun ShowDetails(
     viewState: ShowDetailsViewState,
-    navigateUp: () -> Unit,
-    openShowDetails: (showId: Long) -> Unit,
-    openEpisodeDetails: (episodeId: Long) -> Unit,
+    showDetailsNavigator: ShowDetailsNavigator,
     refresh: () -> Unit,
     onMessageShown: (id: Long) -> Unit,
-    openSeason: (seasonId: Long) -> Unit,
     onSeasonFollowed: (seasonId: Long) -> Unit,
     onSeasonUnfollowed: (seasonId: Long) -> Unit,
     unfollowPreviousSeasons: (seasonId: Long) -> Unit,
@@ -240,7 +244,7 @@ internal fun ShowDetails(
                 title = viewState.show.title,
                 isRefreshing = viewState.refreshing,
                 showAppBarBackground = showAppBarBackground,
-                navigateUp = navigateUp,
+                navigateUp = showDetailsNavigator::navigateUp,
                 refresh = refresh,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -281,10 +285,10 @@ internal fun ShowDetails(
                 seasons = viewState.seasons,
                 watchStats = viewState.watchStats,
                 listState = listState,
-                openShowDetails = openShowDetails,
-                openEpisodeDetails = openEpisodeDetails,
+                openShowDetails = showDetailsNavigator::openShowDetails,
+                openEpisodeDetails = showDetailsNavigator::openEpisodeDetails,
                 contentPadding = contentPadding,
-                openSeason = openSeason,
+                openSeason = { showDetailsNavigator.openSeasons(viewState.show.id ,it) },
                 onSeasonFollowed = onSeasonFollowed,
                 onSeasonUnfollowed = onSeasonUnfollowed,
                 unfollowPreviousSeasons = unfollowPreviousSeasons,

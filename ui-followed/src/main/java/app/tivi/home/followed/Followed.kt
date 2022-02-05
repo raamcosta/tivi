@@ -82,24 +82,29 @@ import com.google.accompanist.insets.ui.TopAppBar
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.ramcosta.composedestinations.annotation.Destination
 
+interface FollowedNavigator {
+    fun openUser()
+
+    fun openShowDetails(showId: Long)
+}
+
+@Destination
 @Composable
 fun Followed(
-    openShowDetails: (showId: Long) -> Unit,
-    openUser: () -> Unit,
+    navigator: FollowedNavigator
 ) {
     Followed(
         viewModel = hiltViewModel(),
-        openShowDetails = openShowDetails,
-        openUser = openUser,
+        navigator = navigator
     )
 }
 
 @Composable
 internal fun Followed(
     viewModel: FollowedViewModel,
-    openShowDetails: (showId: Long) -> Unit,
-    openUser: () -> Unit,
+    navigator: FollowedNavigator
 ) {
     val viewState by rememberFlowWithLifecycle(viewModel.state)
         .collectAsState(initial = FollowedViewState.Empty)
@@ -109,9 +114,8 @@ internal fun Followed(
     Followed(
         state = viewState,
         list = pagingItems,
-        openShowDetails = openShowDetails,
+        navigator = navigator,
         onMessageShown = { viewModel.clearMessage(it) },
-        openUser = openUser,
         refresh = { viewModel.refresh() },
         onFilterChanged = { viewModel.setFilter(it) },
         onSortSelected = { viewModel.setSort(it) },
@@ -122,10 +126,9 @@ internal fun Followed(
 internal fun Followed(
     state: FollowedViewState,
     list: LazyPagingItems<FollowedShowEntryWithShow>,
-    openShowDetails: (showId: Long) -> Unit,
+    navigator: FollowedNavigator,
     onMessageShown: (id: Long) -> Unit,
     refresh: () -> Unit,
-    openUser: () -> Unit,
     onFilterChanged: (String) -> Unit,
     onSortSelected: (SortOption) -> Unit,
 ) {
@@ -147,7 +150,7 @@ internal fun Followed(
                 user = state.user,
                 refreshing = state.isLoading,
                 onRefreshActionClick = refresh,
-                onUserActionClick = openUser,
+                onUserActionClick = navigator::openUser,
                 modifier = Modifier.fillMaxWidth()
             )
         },
@@ -213,7 +216,7 @@ internal fun Followed(
                             poster = entry.poster,
                             watchedEpisodeCount = entry.stats?.watchedEpisodeCount ?: 0,
                             totalEpisodeCount = entry.stats?.episodeCount ?: 0,
-                            onClick = { openShowDetails(entry.show.id) },
+                            onClick = { navigator.openShowDetails(entry.show.id) },
                             contentPadding = PaddingValues(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         )

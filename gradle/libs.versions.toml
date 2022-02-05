@@ -21,6 +21,7 @@ room = "2.4.0"
 threetenbp = "1.5.2"
 spotless = "6.0.5"
 gradleDependencyUpdate = "0.39.0"
+composedestinations = "1.2.3-beta"
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
@@ -54,7 +55,8 @@ androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-kt
 androidx-lifecycle-viewmodel-compose = "androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07"
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "androidxlifecycle" }
 
-androidx-navigation-compose = "androidx.navigation:navigation-compose:2.4.0-beta02"
+compose-destinations-core = { module = "io.github.raamcosta.compose-destinations:animations-core", version.ref = "composedestinations"}
+compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "composedestinations"}
 
 androidx-paging-common = { module = "androidx.paging:paging-common-ktx", version.ref = "paging" }
 androidx-paging-runtime = { module = "androidx.paging:paging-runtime-ktx", version.ref = "paging" }

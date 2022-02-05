@@ -83,36 +83,34 @@ import com.google.accompanist.insets.ui.TopAppBar
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.ramcosta.composedestinations.annotation.Destination
 import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.SnapOffsets
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 
+interface DiscoverNavigator {
+    fun openTrendingShows()
+    fun openPopularShows()
+    fun openRecommendedShows()
+    fun openShowDetails(showId: Long, seasonId: Long?, episodeId: Long?)
+    fun openUser()
+}
+
+@Destination
 @Composable
 fun Discover(
-    openTrendingShows: () -> Unit,
-    openPopularShows: () -> Unit,
-    openRecommendedShows: () -> Unit,
-    openShowDetails: (showId: Long, seasonId: Long?, episodeId: Long?) -> Unit,
-    openUser: () -> Unit,
+    discoverNavigator: DiscoverNavigator
 ) {
     Discover(
         viewModel = hiltViewModel(),
-        openTrendingShows = openTrendingShows,
-        openPopularShows = openPopularShows,
-        openRecommendedShows = openRecommendedShows,
-        openShowDetails = openShowDetails,
-        openUser = openUser,
+        discoverNavigator = discoverNavigator
     )
 }
 
 @Composable
 internal fun Discover(
     viewModel: DiscoverViewModel,
-    openTrendingShows: () -> Unit,
-    openPopularShows: () -> Unit,
-    openRecommendedShows: () -> Unit,
-    openShowDetails: (showId: Long, seasonId: Long?, episodeId: Long?) -> Unit,
-    openUser: () -> Unit,
+    discoverNavigator: DiscoverNavigator
 ) {
     val viewState by rememberFlowWithLifecycle(viewModel.state)
         .collectAsState(initial = DiscoverViewState.Empty)
@@ -120,11 +118,7 @@ internal fun Discover(
     Discover(
         state = viewState,
         refresh = { viewModel.refresh() },
-        openUser = openUser,
-        openShowDetails = openShowDetails,
-        openTrendingShows = openTrendingShows,
-        openRecommendedShows = openRecommendedShows,
-        openPopularShows = openPopularShows,
+        discoverNavigator = discoverNavigator,
         onMessageShown = { viewModel.clearMessage(it) },
     )
 }
@@ -133,11 +127,7 @@ internal fun Discover(
 internal fun Discover(
     state: DiscoverViewState,
     refresh: () -> Unit,
-    openUser: () -> Unit,
-    openShowDetails: (showId: Long, seasonId: Long?, episodeId: Long?) -> Unit,
-    openTrendingShows: () -> Unit,
-    openRecommendedShows: () -> Unit,
-    openPopularShows: () -> Unit,
+    discoverNavigator: DiscoverNavigator,
     onMessageShown: (id: Long) -> Unit,
 ) {
     val scaffoldState = rememberScaffoldState()
@@ -158,7 +148,7 @@ internal fun Discover(
                 user = state.user,
                 refreshing = state.refreshing,
                 onRefreshActionClick = refresh,
-                onUserActionClick = openUser,
+                onUserActionClick = discoverNavigator::openUser,
                 modifier = Modifier.fillMaxWidth()
             )
         },
@@ -205,7 +195,7 @@ internal fun Discover(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    openShowDetails(
+                                    discoverNavigator.openShowDetails(
                                         nextEpisodeToWatch.show.id,
                                         nextEpisodeToWatch.episode.seasonId,
                                         nextEpisodeToWatch.episode.id,
@@ -225,9 +215,9 @@ internal fun Discover(
                         title = stringResource(R.string.discover_trending_title),
                         refreshing = state.trendingRefreshing,
                         onItemClick = {
-                            openShowDetails(it.id, null, null)
+                            discoverNavigator.openShowDetails(it.id, null, null)
                         },
-                        onMoreClick = openTrendingShows
+                        onMoreClick = discoverNavigator::openTrendingShows
                     )
                 }
 
@@ -237,9 +227,9 @@ internal fun Discover(
                         title = stringResource(R.string.discover_recommended_title),
                         refreshing = state.recommendedRefreshing,
                         onItemClick = {
-                            openShowDetails(it.id, null, null)
+                            discoverNavigator.openShowDetails(it.id, null, null)
                         },
-                        onMoreClick = openRecommendedShows
+                        onMoreClick = discoverNavigator::openRecommendedShows
                     )
                 }
 
@@ -248,8 +238,8 @@ internal fun Discover(
                         items = state.popularItems,
                         title = stringResource(R.string.discover_popular_title),
                         refreshing = state.popularRefreshing,
-                        onItemClick = { openShowDetails(it.id, null, null) },
-                        onMoreClick = openPopularShows
+                        onItemClick = { discoverNavigator.openShowDetails(it.id, null, null) },
+                        onMoreClick = discoverNavigator::openPopularShows
                     )
                 }
 

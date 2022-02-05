@@ -64,13 +64,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import app.tivi.AppNavigation
+import app.tivi.NavGraphs
 import app.tivi.R
-import app.tivi.Screen
 import app.tivi.common.compose.theme.AppBarAlphas
 import app.tivi.debugLabel
+import app.tivi.print
 import app.tivi.util.Analytics
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.navigationBarsHeight
@@ -78,6 +80,8 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import com.ramcosta.composedestinations.navigation.navigateTo
+import com.ramcosta.composedestinations.spec.NavGraphSpec
 import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
@@ -92,6 +96,8 @@ internal fun Home(
     // as a screen views to analytics
     LaunchedEffect(navController, analytics) {
         navController.currentBackStackEntryFlow.collect { entry ->
+            println("debugLabel ${entry.debugLabel}")
+
             analytics.trackScreenView(
                 label = entry.debugLabel,
                 route = entry.destination.route,
@@ -112,7 +118,7 @@ internal fun Home(
                 HomeBottomNavigation(
                     selectedNavigation = currentSelectedItem,
                     onNavigationSelected = { selected ->
-                        navController.navigate(selected.route) {
+                        navController.navigateTo(selected) {
                             launchSingleTop = true
                             restoreState = true
 
@@ -174,25 +180,15 @@ internal fun Home(
  */
 @Stable
 @Composable
-private fun NavController.currentScreenAsState(): State<Screen> {
-    val selectedItem = remember { mutableStateOf<Screen>(Screen.Discover) }
+private fun NavController.currentScreenAsState(): State<NavGraphSpec> {
+    val selectedItem = remember { mutableStateOf(NavGraphs.discover) }
 
     DisposableEffect(this) {
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            when {
-                destination.hierarchy.any { it.route == Screen.Discover.route } -> {
-                    selectedItem.value = Screen.Discover
-                }
-                destination.hierarchy.any { it.route == Screen.Watched.route } -> {
-                    selectedItem.value = Screen.Watched
-                }
-                destination.hierarchy.any { it.route == Screen.Following.route } -> {
-                    selectedItem.value = Screen.Following
-                }
-                destination.hierarchy.any { it.route == Screen.Search.route } -> {
-                    selectedItem.value = Screen.Search
-                }
-            }
+
+            backQueue.print()
+
+            selectedItem.value = destination.navGraph()
         }
         addOnDestinationChangedListener(listener)
 
@@ -204,10 +200,22 @@ private fun NavController.currentScreenAsState(): State<Screen> {
     return selectedItem
 }
 
+fun NavDestination.navGraph(): NavGraphSpec {
+    hierarchy.forEach { destination ->
+        NavGraphs.root.nestedNavGraphs.forEach { navGraph ->
+            if (destination.route == navGraph.route) {
+                return navGraph
+            }
+        }
+    }
+
+    throw RuntimeException("Unknown nav graph for destination $route")
+}
+
 @Composable
 internal fun HomeBottomNavigation(
-    selectedNavigation: Screen,
-    onNavigationSelected: (Screen) -> Unit,
+    selectedNavigation: NavGraphSpec,
+    onNavigationSelected: (NavGraphSpec) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BottomNavigation(
@@ -235,8 +243,8 @@ internal fun HomeBottomNavigation(
 @ExperimentalMaterialApi
 @Composable
 internal fun HomeNavigationRail(
-    selectedNavigation: Screen,
-    onNavigationSelected: (Screen) -> Unit,
+    selectedNavigation: NavGraphSpec,
+    onNavigationSelected: (NavGraphSpec) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -300,12 +308,12 @@ private fun HomeNavigationItemIcon(item: HomeNavigationItem, selected: Boolean) 
 }
 
 private sealed class HomeNavigationItem(
-    val screen: Screen,
+    val screen: NavGraphSpec,
     @StringRes val labelResId: Int,
     @StringRes val contentDescriptionResId: Int,
 ) {
     class ResourceIcon(
-        screen: Screen,
+        screen: NavGraphSpec,
         @StringRes labelResId: Int,
         @StringRes contentDescriptionResId: Int,
         @DrawableRes val iconResId: Int,
@@ -313,7 +321,7 @@ private sealed class HomeNavigationItem(
     ) : HomeNavigationItem(screen, labelResId, contentDescriptionResId)
 
     class ImageVectorIcon(
-        screen: Screen,
+        screen: NavGraphSpec,
         @StringRes labelResId: Int,
         @StringRes contentDescriptionResId: Int,
         val iconImageVector: ImageVector,
@@ -323,28 +331,28 @@ private sealed class HomeNavigationItem(
 
 private val HomeNavigationItems = listOf(
     HomeNavigationItem.ImageVectorIcon(
-        screen = Screen.Discover,
+        screen = NavGraphs.discover,
         labelResId = R.string.discover_title,
         contentDescriptionResId = R.string.cd_discover_title,
         iconImageVector = Icons.Outlined.Weekend,
         selectedImageVector = Icons.Default.Weekend,
     ),
     HomeNavigationItem.ImageVectorIcon(
-        screen = Screen.Following,
+        screen = NavGraphs.following,
         labelResId = R.string.following_shows_title,
         contentDescriptionResId = R.string.cd_following_shows_title,
         iconImageVector = Icons.Default.FavoriteBorder,
         selectedImageVector = Icons.Default.Favorite,
     ),
     HomeNavigationItem.ImageVectorIcon(
-        screen = Screen.Watched,
+        screen = NavGraphs.watched,
         labelResId = R.string.watched_shows_title,
         contentDescriptionResId = R.string.cd_watched_shows_title,
         iconImageVector = Icons.Outlined.Visibility,
         selectedImageVector = Icons.Default.Visibility,
     ),
     HomeNavigationItem.ImageVectorIcon(
-        screen = Screen.Search,
+        screen = NavGraphs.search,
         labelResId = R.string.search_navigation_title,
         contentDescriptionResId = R.string.cd_search_navigation_title,
         iconImageVector = Icons.Default.Search,

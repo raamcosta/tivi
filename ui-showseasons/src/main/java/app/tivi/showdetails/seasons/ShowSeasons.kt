@@ -84,27 +84,39 @@ import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.pagerTabIndicatorOffset
 import com.google.accompanist.pager.rememberPagerState
+import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
 
+interface ShowSeasonsNavigator {
+    fun navigateUp()
+
+    fun openEpisodeDetails(episodeId: Long)
+}
+
+data class ShowSeasonsNavArgs(
+    val showId: Long,
+    val seasonId: String?,
+)
+
+@Destination(
+    navArgsDelegate = ShowSeasonsNavArgs::class
+)
 @Composable
 fun ShowSeasons(
-    navigateUp: () -> Unit,
-    openEpisodeDetails: (episodeId: Long) -> Unit,
-    initialSeasonId: Long? = null,
+    showSeasonsNavigator: ShowSeasonsNavigator,
+    navArgs: ShowSeasonsNavArgs,
 ) {
     ShowSeasons(
         viewModel = hiltViewModel(),
-        navigateUp = navigateUp,
-        openEpisodeDetails = openEpisodeDetails,
-        initialSeasonId = initialSeasonId,
+        showSeasonsNavigator = showSeasonsNavigator,
+        initialSeasonId = navArgs.seasonId?.toLong(),
     )
 }
 
 @Composable
 internal fun ShowSeasons(
     viewModel: ShowSeasonsViewModel,
-    navigateUp: () -> Unit,
-    openEpisodeDetails: (episodeId: Long) -> Unit,
+    showSeasonsNavigator: ShowSeasonsNavigator,
     initialSeasonId: Long?,
 ) {
     val viewState by rememberFlowWithLifecycle(viewModel.state)
@@ -112,8 +124,7 @@ internal fun ShowSeasons(
 
     ShowSeasons(
         viewState = viewState,
-        navigateUp = navigateUp,
-        openEpisodeDetails = openEpisodeDetails,
+        showSeasonsNavigator = showSeasonsNavigator,
         refresh = { viewModel.refresh() },
         onMessageShown = { viewModel.clearMessage(it) },
         initialSeasonId = initialSeasonId,
@@ -124,8 +135,7 @@ internal fun ShowSeasons(
 @Composable
 internal fun ShowSeasons(
     viewState: ShowSeasonsViewState,
-    navigateUp: () -> Unit,
-    openEpisodeDetails: (episodeId: Long) -> Unit,
+    showSeasonsNavigator: ShowSeasonsNavigator,
     refresh: () -> Unit,
     onMessageShown: (id: Long) -> Unit,
     initialSeasonId: Long?,
@@ -166,7 +176,7 @@ internal fun ShowSeasons(
                     applyBottom = false
                 ),
                 navigationIcon = {
-                    IconButton(onClick = navigateUp) {
+                    IconButton(onClick = showSeasonsNavigator::navigateUp) {
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = stringResource(R.string.cd_navigate_up)
@@ -205,7 +215,7 @@ internal fun ShowSeasons(
         SeasonsPager(
             seasons = viewState.seasons,
             pagerState = pagerState,
-            openEpisodeDetails = openEpisodeDetails,
+            openEpisodeDetails = showSeasonsNavigator::openEpisodeDetails,
             modifier = Modifier
                 .fillMaxHeight()
                 .bodyWidth(),
