@@ -48,7 +48,8 @@ android {
     }
 
     ksp {
-        arg("compose-destinations.generateNavGraphs", "false")
+        arg("compose-destinations.moduleName", "watched")
+        arg("compose-destinations.mode", "destinations")
     }
 }
 

@@ -51,7 +51,8 @@ android {
     }
 
     ksp {
-        arg("compose-destinations.generateNavGraphs", "false")
+        arg("compose-destinations.moduleName", "account")
+        arg("compose-destinations.mode", "destinations")
     }
 }
 

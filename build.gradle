@@ -15,8 +15,8 @@
  *
  */
 
-import app.tivi.buildsrc.DependencyUpdates
-import app.tivi.buildsrc.ReleaseType
+//import app.tivi.buildsrc.DependencyUpdates
+//import app.tivi.buildsrc.ReleaseType
 
 buildscript {
     ext.buildConfig = [
@@ -28,7 +28,8 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
+        // Compose Destinations snapshot
+        maven { url 'https://jitpack.io' }
 
         // Used for Accompanist snapshots
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
@@ -49,14 +50,15 @@ buildscript {
 
 plugins {
     alias(libs.plugins.spotless)
-    alias(libs.plugins.gradleDependencyUpdate)
+//    alias(libs.plugins.gradleDependencyUpdate)
 }
 
 allprojects {
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
+        // Compose Destinations snapshot
+        maven { url 'https://jitpack.io' }
 
         // Jetpack Compose SNAPSHOTs
         def composeSnapshot = libs.versions.composesnapshot.get()
@@ -98,21 +100,21 @@ subprojects {
     }
 }
 
-/**
- * Update dependencyUpdates task to reject versions which are more 'unstable' than our
- * current version.
- */
-tasks.named("dependencyUpdates").configure {
-    rejectVersionIf {
-        def current = DependencyUpdates.versionToRelease(it.currentVersion)
-        // If we're using a SNAPSHOT, ignore since we must be doing so for a reason.
-        if (current == ReleaseType.SNAPSHOT) return true
-
-        // Otherwise we reject if the candidate is more 'unstable' than our version
-        def candidate = DependencyUpdates.versionToRelease(it.candidate.version)
-        return candidate.isLessStableThan(current)
-    }
-}
+///**
+// * Update dependencyUpdates task to reject versions which are more 'unstable' than our
+// * current version.
+// */
+//tasks.named("dependencyUpdates").configure {
+//    rejectVersionIf {
+//        def current = DependencyUpdates.versionToRelease(it.currentVersion)
+//        // If we're using a SNAPSHOT, ignore since we must be doing so for a reason.
+//        if (current == ReleaseType.SNAPSHOT) return true
+//
+//        // Otherwise we reject if the candidate is more 'unstable' than our version
+//        def candidate = DependencyUpdates.versionToRelease(it.candidate.version)
+//        return candidate.isLessStableThan(current)
+//    }
+//}
 
 Object propOrDef(String propertyName, Object defaultValue) {
     def propertyValue = project.properties[propertyName]

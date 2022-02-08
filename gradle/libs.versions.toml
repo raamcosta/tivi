@@ -20,12 +20,12 @@ retrofit = "2.9.0"
 room = "2.4.0"
 threetenbp = "1.5.2"
 spotless = "6.0.5"
-gradleDependencyUpdate = "0.39.0"
-composedestinations = "1.2.3-beta"
+# gradleDependencyUpdate = "0.39.0"
+composedestinations = "1.2.3-beta-SNAPSHOT"
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
-gradleDependencyUpdate = { id = "com.github.ben-manes.versions", version.ref = "gradleDependencyUpdate" }
+# gradleDependencyUpdate = { id = "com.github.ben-manes.versions", version.ref = "gradleDependencyUpdate" }
 
 [libraries]
 accompanist-flowlayout = { module = "com.google.accompanist:accompanist-flowlayout", version.ref = "accompanist" }
@@ -55,8 +55,13 @@ androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-kt
 androidx-lifecycle-viewmodel-compose = "androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07"
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "androidxlifecycle" }
 
-compose-destinations-core = { module = "io.github.raamcosta.compose-destinations:animations-core", version.ref = "composedestinations"}
-compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "composedestinations"}
+# compose-destinations-core = { module = "io.github.raamcosta.compose-destinations:animations-core", version.ref = "composedestinations"}
+# compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "composedestinations"}
+
+#      ⚠️ SNAPSHOT DEPENDENCY!!!! Update with above ^^^^ once 1.2.3-beta gets released
+compose-destinations-core = { module = "com.github.raamcosta.compose-destinations:animations-core", version.ref = "composedestinations"}
+compose-destinations-ksp = { module = "com.github.raamcosta.compose-destinations:ksp", version.ref = "composedestinations"}
+#      ⚠️ SNAPSHOT DEPENDENCY!!!!
 
 androidx-paging-common = { module = "androidx.paging:paging-common-ktx", version.ref = "paging" }
 androidx-paging-runtime = { module = "androidx.paging:paging-runtime-ktx", version.ref = "paging" }
