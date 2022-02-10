@@ -28,8 +28,6 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        // Compose Destinations snapshot
-        maven { url 'https://jitpack.io' }
 
         // Used for Accompanist snapshots
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
@@ -57,8 +55,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // Compose Destinations snapshot
-        maven { url 'https://jitpack.io' }
 
         // Jetpack Compose SNAPSHOTs
         def composeSnapshot = libs.versions.composesnapshot.get()
