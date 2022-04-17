@@ -50,20 +50,17 @@ android {
         kotlinCompilerExtensionVersion libs.versions.composecompiler.get()
     }
 
+    libraryVariants.all { variant ->
+        kotlin.sourceSets {
+            getByName(variant.name) {
+                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
+            }
+        }
+    }
+
     ksp {
         arg("compose-destinations.moduleName", "account")
         arg("compose-destinations.mode", "destinations")
-    }
-}
-
-kotlin {
-    sourceSets {
-        debug {
-            kotlin.srcDir("build/generated/ksp/debug/kotlin")
-        }
-        release {
-            kotlin.srcDir("build/generated/ksp/release/kotlin")
-        }
     }
 }
 
